@@ -3,6 +3,7 @@ import type { Duplex } from "node:stream";
 import { WebSocketServer, type WebSocket } from "ws";
 import { aramaRepo, senaryoRepo } from "../db/repo.js";
 import { aramayiElleSonlandir, karsilamayiGonder, turIsle } from "../services/orchestrator.js";
+import { tokenDogrula } from "../services/auth.js";
 import type { CallProvider } from "./callProvider.js";
 
 // MVP default provider: no telephony account needed. The browser records a push-to-talk
@@ -14,6 +15,14 @@ export function simulatedProviderUpgradeIsle(req: IncomingMessage, socket: Duple
   const url = new URL(req.url ?? "", "http://localhost");
   const match = url.pathname.match(/^\/ws\/calls\/([^/]+)$/);
   if (!match) {
+    socket.destroy();
+    return;
+  }
+  // Browsers can't attach custom headers to a WebSocket handshake, so the JWT travels as a
+  // query param instead — same auth guarantee as the Authorization header on REST routes.
+  const token = url.searchParams.get("token");
+  if (!token || !tokenDogrula(token)) {
+    socket.write("HTTP/1.1 401 Unauthorized\r\n\r\n");
     socket.destroy();
     return;
   }

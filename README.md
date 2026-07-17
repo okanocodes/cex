@@ -8,6 +8,7 @@
 - **`server/`**: Node.js + Express + WebSocket backend. STT ve LLM çağrıları Hugging Face üzerinden, TTS (metinden sese) çağrıları ise ElevenLabs üzerinden yapılır — canlı HF Inference Providers kataloğunda güvenilir Türkçe konuşan bir TTS modeli bulunmadığı için bu parça HF dışında tutuldu (bkz. aşağıdaki not). API anahtarları/token'lar yalnızca burada tutulur, tarayıcıya asla gönderilmez.
 - **Veritabanı**: Postgres. Tüm senaryolar/aramalar/ayarlar `DATABASE_URL` ile bağlanılan bir Postgres'te tutulur — yerel bir dosyada değil, bu sayede deploy/restart'larda veri kaybolmaz.
 - **Arama modu**: MVP varsayılan olarak **tarayıcı simülasyonu** ile çalışır — mikrofonla konuşup AI'ın sesli yanıtını dinlediğiniz, gerçek telefon hattı gerektirmeyen bir döngü (basılı-tut-konuş / turn-based). Gerçek telefon araması (Twilio) için altyapı hazır şekilde eklenmiştir ancak Ayarlar sayfasından kendi Twilio hesap bilgilerinizi girmeden aktif olmaz.
+- **Kimlik doğrulama**: Basit e-posta/şifre ile kayıt+giriş (JWT). Bu bir erişim kapısıdır — giriş yapan herkes aynı paylaşılan senaryo/arama/ayarlar verisini görür, kullanıcı başına veri izolasyonu yoktur. Şifre sıfırlama/e-posta doğrulama MVP kapsamı dışı.
 
 ## Kurulum
 
@@ -16,15 +17,18 @@ npm run install:all   # hem frontend hem server bağımlılıklarını kurar
 cp server/.env.example server/.env
 ```
 
-`server/.env` içine üç şeyi doldurun:
+`server/.env` içine dört şeyi doldurun:
 
 1. **HF_TOKEN** — https://huggingface.co/settings/tokens (STT + LLM için)
 2. **ELEVENLABS_API_KEY** — https://elevenlabs.io/app/settings/api-keys (TTS için)
 3. **DATABASE_URL** — bir Postgres bağlantı adresi. İki seçenek:
    - **Yerel geliştirme**: `docker run -d --name cex-postgres -e POSTGRES_PASSWORD=cex -e POSTGRES_DB=cex -p 5433:5432 postgres:16-alpine` çalıştırıp `postgres://postgres:cex@localhost:5433/cex` kullanın.
-   - **Ücretsiz barındırılan**: [Neon](https://neon.tech) veya [Supabase](https://supabase.com) üzerinde bir proje açıp verilen bağlantı adresini yapıştırın — bu adresi deploy ederken de kullanacaksınız.
+   - **Ücretsiz barındırılan**: [Neon](https://neon.tech) veya [Supabase](https://supabase.com) üzerinde bir proje açıp verilen bağlantı adresini yapıştırın — Supabase kullanıyorsanız **"Direct connection" değil, "Session pooler"** adresini kullanın (bkz. Deploy bölümü).
+4. **JWT_SECRET** — `openssl rand -hex 32` ile üretilmiş rastgele bir değer (giriş/kayıt token'larını imzalamak için).
 
-HF token ve ElevenLabs anahtarı uygulama içinden Ayarlar sayfasına da girilebilir; `DATABASE_URL` ise yalnızca `.env`'den okunur (sunucu ayağa kalkarken bağlanması gerektiği için).
+HF token ve ElevenLabs anahtarı uygulama içinden Ayarlar sayfasına da girilebilir; `DATABASE_URL` ve `JWT_SECRET` ise yalnızca `.env`'den okunur.
+
+İlk kullanımda tarayıcıda **Kayıt Ol** sayfasından bir hesap oluşturun — kayıt olan herkes uygulamanın tamamına erişebilir (bkz. yukarıdaki Kimlik doğrulama notu).
 
 ## Geliştirme
 
@@ -36,6 +40,7 @@ Bu komut frontend'i (http://localhost:5173) ve backend'i (http://localhost:4000)
 
 ## Kullanım akışı
 
+0. **Kayıt Ol** sayfasından bir hesap oluşturun (veya varsa **Giriş Yap**) — uygulamanın geri kalanı girişe kapalıdır.
 1. **Ayarlar** sayfasından Hugging Face token'ınızı ve ElevenLabs API anahtarınızı girin (girilmemişse aramalar STT/LLM/TTS hatası verir).
 2. **Senaryolar** sayfasından bir senaryo oluşturun: sistem promptu, karşılama mesajı ve isteğe bağlı kurallar (anahtar kelime eşleşince LLM çağrılmadan sonlandırma / özel yanıt / değişken kaydetme).
 3. **Arama Başlat** sayfasından senaryoyu seçip test araması başlatın; mikrofon butonunu basılı tutup konuşun, bırakınca AI yanıtlar.
@@ -62,8 +67,9 @@ Railway, Render, Fly.io gibi bir platforma deploy ederken:
 
 1. Build komutu: `npm run install:all && npm run build:all`
 2. Start komutu: `npm start`
-3. Ortam değişkenleri: `HF_TOKEN`, `ELEVENLABS_API_KEY`, `DATABASE_URL` (Neon/Supabase gibi bir Postgres'e işaret etsin), `PORT` (çoğu platform bunu otomatik sağlar)
+3. Ortam değişkenleri: `HF_TOKEN`, `ELEVENLABS_API_KEY`, `JWT_SECRET`, `DATABASE_URL` (Neon/Supabase gibi bir Postgres'e işaret etsin), `PORT` (çoğu platform bunu otomatik sağlar)
 4. WebSocket desteği açık olmalı — seçtiğiniz platformun bunu desteklediğini doğrulayın (Railway/Render/Fly.io hepsi destekler).
+5. **Supabase kullanıyorsanız**: `DATABASE_URL` için "Direct connection" değil **"Session pooler"** veya **"Transaction pooler"** adresini kullanın (Supabase dashboard → Connect). Direct connection yalnızca IPv6'ya çözümleniyor ve çoğu platformun (Render dahil) giden IPv6 desteği olmadığı için `ENETUNREACH` hatasına yol açıyor.
 
 Veritabanı artık Postgres olduğu için veri, platformun dosya sistemi ephemeral olsa bile redeploy/restart'larda kaybolmaz — tek şart `DATABASE_URL`'nin kalıcı bir Postgres'e işaret etmesi.
 

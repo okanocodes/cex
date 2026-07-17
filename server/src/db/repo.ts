@@ -1,6 +1,30 @@
 import { randomUUID } from "node:crypto";
 import { pool } from "./store.js";
-import type { Arama, AramaTuru, Senaryo, Settings } from "../types.js";
+import type { Arama, AramaTuru, Senaryo, Settings, User } from "../types.js";
+
+function userFromRow(row: Record<string, unknown>): User {
+  return {
+    id: row.id as string,
+    email: row.email as string,
+    password_hash: row.password_hash as string,
+    created_at: (row.created_at as Date).toISOString(),
+  };
+}
+
+export const userRepo = {
+  getByEmail: async (email: string): Promise<User | undefined> => {
+    const { rows } = await pool.query("SELECT * FROM users WHERE email = $1", [email.toLowerCase()]);
+    return rows[0] ? userFromRow(rows[0]) : undefined;
+  },
+  create: async (email: string, passwordHash: string): Promise<User> => {
+    const id = randomUUID();
+    const { rows } = await pool.query(
+      "INSERT INTO users (id, email, password_hash) VALUES ($1, $2, $3) RETURNING *",
+      [id, email.toLowerCase(), passwordHash],
+    );
+    return userFromRow(rows[0]);
+  },
+};
 
 function senaryoFromRow(row: Record<string, unknown>): Senaryo {
   return {

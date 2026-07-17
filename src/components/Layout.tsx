@@ -1,4 +1,5 @@
-import { NavLink, Outlet } from "react-router-dom";
+import { NavLink, Outlet, useNavigate } from "react-router-dom";
+import { useAuth } from "../lib/auth";
 
 const NAV_ITEMS = [
   { to: "/", label: "Panel", end: true },
@@ -9,9 +10,12 @@ const NAV_ITEMS = [
 ];
 
 export default function Layout() {
+  const { email, cikisYap } = useAuth();
+  const navigate = useNavigate();
+
   return (
     <div className="flex min-h-screen bg-slate-950 text-slate-100">
-      <aside className="w-64 shrink-0 border-r border-slate-800 bg-slate-900/60 p-5">
+      <aside className="flex w-64 shrink-0 flex-col border-r border-slate-800 bg-slate-900/60 p-5">
         <div className="mb-8 flex items-center gap-2">
           <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-indigo-600 font-bold">
             C
@@ -39,6 +43,18 @@ export default function Layout() {
             </NavLink>
           ))}
         </nav>
+        <div className="mt-auto border-t border-slate-800 pt-4">
+          {email && <p className="mb-2 truncate text-xs text-slate-500">{email}</p>}
+          <button
+            onClick={() => {
+              cikisYap();
+              navigate("/giris");
+            }}
+            className="w-full rounded-md px-3 py-2 text-left text-sm font-medium text-slate-300 hover:bg-slate-800 hover:text-white"
+          >
+            Çıkış Yap
+          </button>
+        </div>
       </aside>
       <main className="flex-1 overflow-y-auto p-8">
         <Outlet />

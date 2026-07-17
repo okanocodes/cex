@@ -5,6 +5,8 @@
 //                  | { type: "arama_bitti", sonuc }
 //                  | { type: "hata", mesaj }
 
+import { getToken } from "./auth";
+
 export type SunucuMesaj =
   | { type: "ai_turu"; metin: string; audio_base64?: string; mime?: string }
   | { type: "kullanici_turu"; metin: string }
@@ -17,7 +19,12 @@ export class CallSocket {
 
   constructor(callId: string, onMessage: (msg: SunucuMesaj) => void, onClose?: () => void) {
     const protocol = window.location.protocol === "https:" ? "wss" : "ws";
-    this.ws = new WebSocket(`${protocol}://${window.location.host}/ws/calls/${callId}`);
+    // Browsers can't set custom headers on a WebSocket handshake, so the JWT travels as a
+    // query param instead — validated server-side in simulatedProvider.ts before upgrading.
+    const token = getToken();
+    this.ws = new WebSocket(
+      `${protocol}://${window.location.host}/ws/calls/${callId}?token=${encodeURIComponent(token ?? "")}`,
+    );
     this.ws.onmessage = (event) => {
       try {
         onMessage(JSON.parse(event.data) as SunucuMesaj);

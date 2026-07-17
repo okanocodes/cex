@@ -1,12 +1,22 @@
 import type { Arama, AramaTuru, Ayarlar, Senaryo } from "../types";
+import { getToken, oturumuTemizle } from "./auth";
 
 const BASE = "/api";
 
 async function req<T>(path: string, init?: RequestInit): Promise<T> {
+  const token = getToken();
   const res = await fetch(`${BASE}${path}`, {
-    headers: { "Content-Type": "application/json" },
+    headers: {
+      "Content-Type": "application/json",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
     ...init,
   });
+  if (res.status === 401) {
+    oturumuTemizle();
+    window.location.href = "/giris";
+    throw new Error("Oturum sona erdi, tekrar giriş yapın.");
+  }
   if (!res.ok) {
     const body = await res.text().catch(() => "");
     throw new Error(`İstek başarısız (${res.status}): ${body || res.statusText}`);

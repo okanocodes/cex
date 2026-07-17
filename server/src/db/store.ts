@@ -17,6 +17,13 @@ export const pool = new Pool({
 });
 
 const SCHEMA = `
+CREATE TABLE IF NOT EXISTS users (
+  id UUID PRIMARY KEY,
+  email TEXT NOT NULL UNIQUE,
+  password_hash TEXT NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
 CREATE TABLE IF NOT EXISTS scenarios (
   id UUID PRIMARY KEY,
   ad TEXT NOT NULL,

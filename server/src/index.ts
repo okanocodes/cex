@@ -8,16 +8,19 @@ import cors from "cors";
 import { scenariosRouter } from "./routes/scenarios.js";
 import { callsRouter } from "./routes/calls.js";
 import { settingsRouter } from "./routes/settings.js";
+import { authRouter } from "./routes/auth.js";
 import { twilioWebhooksRouter } from "./routes/twilioWebhooks.js";
 import { simulatedProviderUpgradeIsle } from "./providers/simulatedProvider.js";
+import { requireAuth } from "./middleware/requireAuth.js";
 
 const app = express();
 app.use(cors());
 app.use(express.json({ limit: "10mb" }));
 
-app.use("/api/scenarios", scenariosRouter);
-app.use("/api/calls", callsRouter);
-app.use("/api/settings", settingsRouter);
+app.use("/api/auth", authRouter);
+app.use("/api/scenarios", requireAuth, scenariosRouter);
+app.use("/api/calls", requireAuth, callsRouter);
+app.use("/api/settings", requireAuth, settingsRouter);
 app.use("/webhooks/twilio", twilioWebhooksRouter);
 
 app.get("/health", (_req, res) => res.json({ ok: true }));

@@ -77,9 +77,9 @@ export interface Settings {
   twilio_phone_number?: string;
 }
 
-export interface DbSchema {
-  scenarios: Senaryo[];
-  calls: Arama[];
-  call_turns: AramaTuru[];
-  settings: Settings;
+export interface User {
+  id: string;
+  email: string;
+  password_hash: string;
+  created_at: string;
 }
