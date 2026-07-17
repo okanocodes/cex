@@ -3,8 +3,11 @@ import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../lib/auth";
 import { Button, Card, ErrorState, Input, Label } from "../components/ui";
 
+const DEMO_EMAIL = "demo@cex.app";
+const DEMO_SIFRE = "demo12345";
+
 export default function Giris() {
-  const { girisYap } = useAuth();
+  const { girisYap, kayitOl } = useAuth();
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [sifre, setSifre] = useState("");
@@ -25,6 +28,26 @@ export default function Giris() {
     }
   };
 
+  const demoIleGirisYap = async () => {
+    setEmail(DEMO_EMAIL);
+    setSifre(DEMO_SIFRE);
+    setHata(null);
+    setYukleniyor(true);
+    try {
+      try {
+        await girisYap(DEMO_EMAIL, DEMO_SIFRE);
+      } catch {
+        // Demo hesabı henüz yoksa (taze veritabanı) otomatik oluştur ve o oturumla devam et.
+        await kayitOl(DEMO_EMAIL, DEMO_SIFRE);
+      }
+      navigate("/");
+    } catch (err) {
+      setHata((err as Error).message);
+    } finally {
+      setYukleniyor(false);
+    }
+  };
+
   return (
     <div className="flex min-h-screen items-center justify-center bg-slate-950 px-4">
       <Card className="w-full max-w-sm">
@@ -37,7 +60,17 @@ export default function Giris() {
             <p className="text-xs text-slate-400">AI Çağrı Platformu</p>
           </div>
         </div>
-        <h1 className="mb-4 text-lg font-semibold text-white">Giriş Yap</h1>
+        <div className="mb-4 flex items-center justify-between">
+          <h1 className="text-lg font-semibold text-white">Giriş Yap</h1>
+          <button
+            type="button"
+            onClick={demoIleGirisYap}
+            disabled={yukleniyor}
+            className="text-xs font-medium text-indigo-400 hover:text-indigo-300 disabled:opacity-50"
+          >
+            Demo Kullanıcı
+          </button>
+        </div>
         <form className="flex flex-col gap-4" onSubmit={gonder}>
           <div>
             <Label>E-posta</Label>
