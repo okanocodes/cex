@@ -13,14 +13,14 @@ import { settingsRepo } from "../db/repo.js";
 //     do not change, only the audio transport does.
 // None of this can be exercised without the user's own Twilio account and credentials.
 
-export function twilioYapilandirilmisMi(): boolean {
-  const s = settingsRepo.get();
+export async function twilioYapilandirilmisMi(): Promise<boolean> {
+  const s = await settingsRepo.get();
   return Boolean(s.twilio_account_sid && s.twilio_auth_token && s.twilio_phone_number);
 }
 
 export async function outboundCallBaslat(hedefNumara: string, webhookUrl: string) {
-  const settings = settingsRepo.get();
-  if (!twilioYapilandirilmisMi()) {
+  const settings = await settingsRepo.get();
+  if (!(await twilioYapilandirilmisMi())) {
     throw new Error("Twilio kimlik bilgileri Ayarlar sayfasından girilmedi.");
   }
   const client = twilioLib(settings.twilio_account_sid!, settings.twilio_auth_token!);

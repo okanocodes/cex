@@ -34,7 +34,8 @@ export const api = {
   },
   ayarlar: {
     get: () => req<Ayarlar>("/settings"),
-    update: (data: Partial<Ayarlar> & { hf_token?: string; twilio_auth_token?: string }) =>
-      req<Ayarlar>("/settings", { method: "PUT", body: JSON.stringify(data) }),
+    update: (
+      data: Partial<Ayarlar> & { hf_token?: string; elevenlabs_api_key?: string; twilio_auth_token?: string },
+    ) => req<Ayarlar>("/settings", { method: "PUT", body: JSON.stringify(data) }),
   },
 };

@@ -3,12 +3,12 @@ import { senaryoRepo } from "../db/repo.js";
 
 export const scenariosRouter = Router();
 
-scenariosRouter.get("/", (_req, res) => {
-  res.json(senaryoRepo.list());
+scenariosRouter.get("/", async (_req, res) => {
+  res.json(await senaryoRepo.list());
 });
 
-scenariosRouter.get("/:id", (req, res) => {
-  const senaryo = senaryoRepo.get(req.params.id);
+scenariosRouter.get("/:id", async (req, res) => {
+  const senaryo = await senaryoRepo.get(req.params.id);
   if (!senaryo) return res.status(404).json({ error: "Senaryo bulunamadı" });
   res.json(senaryo);
 });

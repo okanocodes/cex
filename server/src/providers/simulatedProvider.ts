@@ -33,8 +33,8 @@ function baglantiyiIsle(ws: WebSocket, callId: string) {
       const msg = JSON.parse(raw.toString());
 
       if (msg.type === "baslat") {
-        const arama = aramaRepo.get(callId);
-        const senaryo = arama && senaryoRepo.get(arama.scenario_id);
+        const arama = await aramaRepo.get(callId);
+        const senaryo = arama && (await senaryoRepo.get(arama.scenario_id));
         if (!arama || !senaryo) {
           gonder(ws, { type: "hata", mesaj: "Arama veya senaryo bulunamadı." });
           return;

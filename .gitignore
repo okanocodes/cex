@@ -12,12 +12,9 @@ dist
 dist-ssr
 *.local
 
-# Env files (contain secrets — HF token, Twilio credentials)
+# Env files (contain secrets — HF token, ElevenLabs key, DATABASE_URL, Twilio credentials)
 .env
 server/.env
-
-# Local JSON data store (scenarios/calls/settings) — not meant to be versioned
-server/data/db.json
 
 # Editor directories and files
 .vscode/*

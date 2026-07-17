@@ -8,6 +8,8 @@
     "dev:web": "vite",
     "dev:server": "npm run dev --prefix server",
     "build": "tsc -b && vite build",
+    "build:all": "npm run build && npm run build --prefix server",
+    "start": "node server/dist/index.js",
     "install:all": "npm install && npm install --prefix server",
     "lint": "oxlint",
     "preview": "vite preview",

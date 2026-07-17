@@ -9,7 +9,8 @@ function disaAktar(s: Settings) {
     hf_token_ayarli: Boolean(process.env.HF_TOKEN || s.hf_token),
     hf_llm_model: s.hf_llm_model,
     hf_stt_model: s.hf_stt_model,
-    hf_tts_model: s.hf_tts_model,
+    elevenlabs_ayarli: Boolean(process.env.ELEVENLABS_API_KEY || s.elevenlabs_api_key),
+    elevenlabs_voice_id: s.elevenlabs_voice_id,
     mod: s.mod,
     max_tur: s.max_tur,
     twilio_ayarli: Boolean(s.twilio_account_sid && s.twilio_auth_token && s.twilio_phone_number),
@@ -18,8 +19,8 @@ function disaAktar(s: Settings) {
   };
 }
 
-settingsRouter.get("/", (_req, res) => {
-  res.json(disaAktar(settingsRepo.get()));
+settingsRouter.get("/", async (_req, res) => {
+  res.json(disaAktar(await settingsRepo.get()));
 });
 
 settingsRouter.put("/", async (req, res) => {
@@ -28,7 +29,8 @@ settingsRouter.put("/", async (req, res) => {
   if (body.hf_token) patch.hf_token = body.hf_token;
   if (body.hf_llm_model) patch.hf_llm_model = body.hf_llm_model;
   if (body.hf_stt_model) patch.hf_stt_model = body.hf_stt_model;
-  if (body.hf_tts_model) patch.hf_tts_model = body.hf_tts_model;
+  if (body.elevenlabs_api_key) patch.elevenlabs_api_key = body.elevenlabs_api_key;
+  if (body.elevenlabs_voice_id) patch.elevenlabs_voice_id = body.elevenlabs_voice_id;
   if (body.mod === "simulasyon" || body.mod === "twilio") patch.mod = body.mod;
   if (typeof body.max_tur === "number") patch.max_tur = body.max_tur;
   if (body.twilio_account_sid !== undefined) patch.twilio_account_sid = body.twilio_account_sid;

@@ -1,4 +1,5 @@
-import { generateReply, synthesizeSpeech, transcribeAudio, type SohbetTuru } from "./huggingface.js";
+import { generateReply, transcribeAudio, type SohbetTuru } from "./huggingface.js";
+import { synthesizeSpeech } from "./elevenlabs.js";
 import { kuralEslestir } from "./ruleEngine.js";
 import { aramaRepo, senaryoRepo, settingsRepo } from "../db/repo.js";
 import type { Arama, Senaryo } from "../types.js";
@@ -40,11 +41,11 @@ export async function karsilamayiGonder(arama: Arama, senaryo: Senaryo): Promise
 }
 
 export async function turIsle(aramaId: string, audio: Buffer, mime: string): Promise<TurSonucu> {
-  const arama = aramaRepo.get(aramaId);
+  const arama = await aramaRepo.get(aramaId);
   if (!arama) throw new Error("Arama bulunamadı.");
-  const senaryo = senaryoRepo.get(arama.scenario_id);
+  const senaryo = await senaryoRepo.get(arama.scenario_id);
   if (!senaryo) throw new Error("Senaryo bulunamadı.");
-  const settings = settingsRepo.get();
+  const settings = await settingsRepo.get();
 
   const kullaniciMetni = await transcribeAudio(audio, mime);
   await aramaRepo.addTurn({ call_id: arama.id, konusmaci: "kullanici", metin: kullaniciMetni });
@@ -55,7 +56,8 @@ export async function turIsle(aramaId: string, audio: Buffer, mime: string): Pro
   await aramaRepo.update(aramaId, { kullanim });
 
   const degiskenler = { ...(arama.sonuc?.degiskenler ?? {}) };
-  const kullaniciTurSayisi = aramaRepo.turns(aramaId).filter((t) => t.konusmaci === "kullanici").length;
+  const tumTurlar = await aramaRepo.turns(aramaId);
+  const kullaniciTurSayisi = tumTurlar.filter((t) => t.konusmaci === "kullanici").length;
 
   let aiMetin: string;
   let bitti: boolean;
@@ -82,11 +84,10 @@ export async function turIsle(aramaId: string, audio: Buffer, mime: string): Pro
         if (kural?.eylem === "degisken_kaydet" && kural.parametreler?.degisken_adi) {
           degiskenler[kural.parametreler.degisken_adi] = kullaniciMetni;
         }
-        const gecmis = aramaRepo
-          .turns(aramaId)
+        const gecmis = tumTurlar
           .slice(-GECMIS_PENCERESI)
           .map<SohbetTuru>((t) => ({ role: t.konusmaci === "ai" ? "assistant" : "user", content: t.metin }));
-        const llmYanit = await generateReply(senaryo.sistem_promptu, gecmis);
+        const llmYanit = await generateReply(senaryo.sistem_promptu, senaryo.toplanacak_degiskenler, gecmis);
         kullanim.llm_cagri += 1;
         kullanim.tahmini_token += tokenTahminEt(senaryo.sistem_promptu, ...gecmis.map((g) => g.content), llmYanit.yanit);
         Object.assign(degiskenler, llmYanit.degiskenler);
@@ -116,7 +117,7 @@ export async function turIsle(aramaId: string, audio: Buffer, mime: string): Pro
 }
 
 export async function aramayiElleSonlandir(aramaId: string) {
-  const arama = aramaRepo.get(aramaId);
+  const arama = await aramaRepo.get(aramaId);
   if (!arama) throw new Error("Arama bulunamadı.");
   const sonuc = { degiskenler: arama.sonuc?.degiskenler ?? {}, etiket: "Kullanıcı tarafından sonlandırıldı" };
   await aramaRepo.update(aramaId, { durum: "tamamlandi", ended_at: new Date().toISOString(), sonuc });

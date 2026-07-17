@@ -1,5 +1,8 @@
 import "dotenv/config";
+import fs from "node:fs";
 import http from "node:http";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 import express from "express";
 import cors from "cors";
 import { scenariosRouter } from "./routes/scenarios.js";
@@ -18,6 +21,18 @@ app.use("/api/settings", settingsRouter);
 app.use("/webhooks/twilio", twilioWebhooksRouter);
 
 app.get("/health", (_req, res) => res.json({ ok: true }));
+
+// In production this server also serves the built React app (repo-root `dist/`), so the
+// whole thing deploys as a single service — no separate static host/CORS setup needed.
+// In dev, the Vite dev server handles the frontend instead and this block is a no-op.
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const frontendDist = path.join(__dirname, "..", "..", "dist");
+if (fs.existsSync(frontendDist)) {
+  app.use(express.static(frontendDist));
+  app.get(/^(?!\/api|\/webhooks|\/health).*/, (_req, res) => {
+    res.sendFile(path.join(frontendDist, "index.html"));
+  });
+}
 
 const server = http.createServer(app);
 

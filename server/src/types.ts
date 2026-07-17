@@ -65,7 +65,11 @@ export interface Settings {
   hf_token?: string;
   hf_llm_model: string;
   hf_stt_model: string;
-  hf_tts_model: string;
+  // TTS runs on ElevenLabs, not Hugging Face — no live HF-hosted Inference Provider
+  // currently offers usable Turkish text-to-speech (checked: chatterbox's only reachable
+  // route is English-only; no other live model claims Turkish either).
+  elevenlabs_api_key?: string;
+  elevenlabs_voice_id: string;
   mod: AramaMod;
   max_tur: number;
   twilio_account_sid?: string;

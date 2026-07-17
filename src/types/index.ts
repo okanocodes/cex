@@ -66,7 +66,8 @@ export interface Ayarlar {
   hf_token_ayarli: boolean;
   hf_llm_model: string;
   hf_stt_model: string;
-  hf_tts_model: string;
+  elevenlabs_ayarli: boolean;
+  elevenlabs_voice_id: string;
   mod: AramaMod;
   max_tur: number;
   twilio_ayarli: boolean;

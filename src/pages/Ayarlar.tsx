@@ -11,7 +11,8 @@ export default function AyarlarSayfasi() {
   const [hfToken, setHfToken] = useState("");
   const [llmModel, setLlmModel] = useState("");
   const [sttModel, setSttModel] = useState("");
-  const [ttsModel, setTtsModel] = useState("");
+  const [elevenlabsKey, setElevenlabsKey] = useState("");
+  const [elevenlabsVoiceId, setElevenlabsVoiceId] = useState("");
   const [mod, setMod] = useState<AramaMod>("simulasyon");
   const [maxTur, setMaxTur] = useState(12);
   const [twilioSid, setTwilioSid] = useState("");
@@ -22,7 +23,7 @@ export default function AyarlarSayfasi() {
     if (ayarlar.data) {
       setLlmModel(ayarlar.data.hf_llm_model);
       setSttModel(ayarlar.data.hf_stt_model);
-      setTtsModel(ayarlar.data.hf_tts_model);
+      setElevenlabsVoiceId(ayarlar.data.elevenlabs_voice_id);
       setMod(ayarlar.data.mod);
       setMaxTur(ayarlar.data.max_tur);
       setTwilioSid(ayarlar.data.twilio_account_sid ?? "");
@@ -36,7 +37,8 @@ export default function AyarlarSayfasi() {
         ...(hfToken ? { hf_token: hfToken } : {}),
         hf_llm_model: llmModel,
         hf_stt_model: sttModel,
-        hf_tts_model: ttsModel,
+        ...(elevenlabsKey ? { elevenlabs_api_key: elevenlabsKey } : {}),
+        elevenlabs_voice_id: elevenlabsVoiceId,
         mod,
         max_tur: maxTur,
         twilio_account_sid: twilioSid || undefined,
@@ -45,6 +47,7 @@ export default function AyarlarSayfasi() {
       }),
     onSuccess: () => {
       setHfToken("");
+      setElevenlabsKey("");
       setTwilioAuth("");
       queryClient.invalidateQueries({ queryKey: ["ayarlar"] });
     },
@@ -55,7 +58,7 @@ export default function AyarlarSayfasi() {
 
   return (
     <div className="max-w-2xl">
-      <PageHeader title="Ayarlar" description="Hugging Face model ayarları ve arama modu" />
+      <PageHeader title="Ayarlar" description="Model ayarları ve arama modu" />
 
       <form
         className="flex flex-col gap-6"
@@ -66,7 +69,7 @@ export default function AyarlarSayfasi() {
       >
         <Card className="flex flex-col gap-4">
           <div className="flex items-center justify-between">
-            <p className="font-medium text-white">Hugging Face</p>
+            <p className="font-medium text-white">Hugging Face (Konuşma Anlama + LLM)</p>
             <Badge tone={ayarlar.data?.hf_token_ayarli ? "green" : "amber"}>
               {ayarlar.data?.hf_token_ayarli ? "Token Ayarlı" : "Token Girilmedi"}
             </Badge>
@@ -88,9 +91,35 @@ export default function AyarlarSayfasi() {
             <Label>STT (Konuşmadan Metne) Modeli</Label>
             <Input value={sttModel} onChange={(e) => setSttModel(e.target.value)} placeholder="openai/whisper-large-v3" />
           </div>
+        </Card>
+
+        <Card className="flex flex-col gap-4">
+          <div className="flex items-center justify-between">
+            <p className="font-medium text-white">ElevenLabs (Metinden Sese)</p>
+            <Badge tone={ayarlar.data?.elevenlabs_ayarli ? "green" : "amber"}>
+              {ayarlar.data?.elevenlabs_ayarli ? "Anahtar Ayarlı" : "Anahtar Girilmedi"}
+            </Badge>
+          </div>
+          <p className="text-xs text-slate-400">
+            Türkçe ses kalitesi için Hugging Face yerine ElevenLabs kullanılıyor — canlı HF modelleri arasında güvenilir
+            Türkçe konuşan bir TTS bulunmuyor. Anahtarınızı elevenlabs.io/app/settings/api-keys üzerinden alabilirsiniz.
+          </p>
           <div>
-            <Label>TTS (Metinden Sese) Modeli</Label>
-            <Input value={ttsModel} onChange={(e) => setTtsModel(e.target.value)} placeholder="ResembleAI/chatterbox" />
+            <Label>ElevenLabs API Anahtarı</Label>
+            <Input
+              type="password"
+              value={elevenlabsKey}
+              onChange={(e) => setElevenlabsKey(e.target.value)}
+              placeholder={ayarlar.data?.elevenlabs_ayarli ? "•••••••• (değiştirmek için yazın)" : "sk_..."}
+            />
+          </div>
+          <div>
+            <Label>Ses (Voice ID)</Label>
+            <Input
+              value={elevenlabsVoiceId}
+              onChange={(e) => setElevenlabsVoiceId(e.target.value)}
+              placeholder="JBFqnCBsd6RMkjVDRZzb"
+            />
           </div>
         </Card>
 
